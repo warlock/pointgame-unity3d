@@ -26,12 +26,21 @@ public class Character : MonoBehaviour
 	{
 		if (Input.GetMouseButtonDown(0) && !drawingLine)
 		{
-			drawingLine = true;
-			initPos = new Vector3(Camera.main.ScreenToWorldPoint(Input.mousePosition).x,
-                                  Camera.main.ScreenToWorldPoint(Input.mousePosition).y,
-                                  0f);
+            RaycastHit hit = new RaycastHit();
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+
+            Physics.Raycast(ray, out hit);
+
+            if (hit.transform.name.Contains("Character"))
+            {
+
+                drawingLine = true;
+                initPos = new Vector3(Camera.main.ScreenToWorldPoint(Input.mousePosition).x,
+                                      Camera.main.ScreenToWorldPoint(Input.mousePosition).y,
+                                      0f);
+            }
         }
-		if (Input.GetMouseButton(0))
+		if (Input.GetMouseButton(0) && drawingLine && mov > 0)
 		{
             Vector3 mouseWorld = new Vector3(Camera.main.ScreenToWorldPoint(Input.mousePosition).x,
                                              Camera.main.ScreenToWorldPoint(Input.mousePosition).y,
@@ -44,6 +53,7 @@ public class Character : MonoBehaviour
                                   0f);
                 points.Add((GameObject)Instantiate(point, mouseWorld, Quaternion.identity));
                 positions.Add(mouseWorld);
+                mov--;
 			}
 		}
 		if (Input.GetMouseButtonUp(0) && drawingLine)
@@ -51,6 +61,7 @@ public class Character : MonoBehaviour
 			drawingLine = false;
             ShowMenu();
             ConfirmPath();
+            mov = 4;
 		}
 
 	}
@@ -78,6 +89,32 @@ public class Character : MonoBehaviour
     public void ConfirmPath()
     {
         showGUI = false;
+
+        StartCoroutine(MoveChar());
+
+        
+    }
+
+    private IEnumerator MoveChar()
+    {
+        yield return null;
+
+        for (int i = 0; i < positions.Count; i++)
+        {
+            float perc = 0f;
+            float lerpTime = 1f;
+            float currentTime = 0f;
+
+            while (perc < 1)
+            {
+                currentTime += Time.deltaTime;
+                perc = currentTime / lerpTime;
+                Debug.Log(perc);
+                transform.position = Vector3.MoveTowards(transform.position, positions[i], perc);
+                yield return new WaitForEndOfFrame();
+            }
+
+        }
 
         for (int i = positions.Count; i > 0; i--)
         {
